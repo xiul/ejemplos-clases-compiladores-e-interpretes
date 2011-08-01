@@ -1,0 +1,53 @@
+import java_cup.runtime.*;
+import java.io.*;
+
+parser code {:
+
+
+	public static void main(String args[]) throws Exception {
+		parser analizador;
+		analizador = new parser(new Scan(System.in));
+		analizador.parse();
+	}
+
+:}
+
+terminal Integer DIGITO;
+terminal SUMA, RESTA, DIVISION, MULTIPLICACION;
+terminal POTENCIA, RESULTADO, LPARENT, RPARENT, SIGNO;
+
+non terminal Integer expresion;
+non terminal sesion, ecuacion, opbinaria;
+
+precedence left RESTA, SUMA;
+precedence left MULTIPLICACION, DIVISION;
+precedence left SIGNO;
+precedence right POTENCIA;
+
+//GRAMATICA
+
+sesion ::= sesion ecuacion | ecuacion;
+
+ecuacion ::= 		expresion:EQ {: System.out.println("Sintaxis OK"); 
+							System.out.println("Resultado = "+EQ.intValue()); 
+						:} RESULTADO
+			|	error RESULTADO
+			;
+expresion 	::= DIGITO:D1
+			{:	RESULT = new Integer(D1.intValue());	:}
+          	| expresion:E1 SUMA expresion:E2
+			{:	RESULT = new Integer(E1.intValue() + E2.intValue()); :}
+          	| expresion:EE1 RESTA expresion:EE2
+			{:	RESULT = new Integer(EE1.intValue() - EE2.intValue()); :}
+          	| expresion:EA1 MULTIPLICACION expresion:EA2
+			{:	RESULT = new Integer(EA1.intValue() * EA2.intValue()); :}
+          	| expresion:EC1 DIVISION expresion:EC2
+			{:	RESULT = new Integer(EC1.intValue() / EC2.intValue()); :}
+		| expresion:ED1 POTENCIA expresion:ED2
+			{:	RESULT = new Integer( (int) Math.pow(ED1.intValue(),ED2.intValue()));  :}
+		| RESTA expresion:EPX1
+			{: RESULT = new Integer(EPX1 * (-1)); :}
+			%prec SIGNO
+		| LPARENT expresion:EXW RPARENT
+			{: RESULT = new Integer(EXW.intValue()); :}
+		;

@@ -1,0 +1,45 @@
+import java_cup.runtime.*;
+import java.io.*;
+
+parser code {:
+
+
+	public static void main(String args[]) throws Exception {
+		parser analizador;
+		analizador = new parser(new Scan(System.in));
+		analizador.parse();
+	}
+
+:}
+
+terminal SUMA, RESTA, DIVISION, MULTIPLICACION, DIGITO;
+terminal POTENCIA, RESULTADO, LPARENT, RPARENT, SIGNO;
+
+non terminal sesion, ecuacion, expresion, opbinaria;
+
+precedence left RESTA, SUMA;
+precedence left MULTIPLICACION, DIVISION;
+precedence left SIGNO;
+precedence right POTENCIA;
+
+//GRAMATICA
+
+sesion ::= sesion ecuacion | ecuacion;
+
+ecuacion ::= expresion {: System.out.println("Sintaxis OK"); :} RESULTADO;
+expresion 	::= DIGITO
+          	| expresion opbinaria expresion
+		| RESTA expresion
+			%prec SIGNO
+		| LPARENT expresion RPARENT;
+
+
+
+opbinaria ::=	SUMA
+			| RESTA
+			| MULTIPLICACION
+			| DIVISION 
+			| POTENCIA {: System.out.println("DETECTO POTENCIA");:};
+
+
+
