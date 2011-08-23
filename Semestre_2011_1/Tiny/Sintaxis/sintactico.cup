@@ -1,0 +1,115 @@
+import java_cup.runtime.*;
+
+parser code {:
+
+/***********
+SymbolFactory es una nueva caracteristica que ha sido añadida a las version 11a de cup, la cual facilita la implementacion de clases Symbol personalizadas
+, esto debido a que dicha clase no provee mucha información de contexto que podria ser util para el analisis semantico o ayudar en la construccion del AST
+Mas informacion en: http//4thmouse.com/index.php/2007/02/15/using-custom-symbols-in-cup/
+***********/
+	public static void main(String args[]) throws Exception {
+		//TinySymbolFactory sf = new TinySymbolFactory();
+		SymbolFactory sf = new DefaultSymbolFactory();
+		if (args.length==0) 
+			new parser(new Scanner(System.in,sf),sf).parse();
+		else 
+			new parser(new Scanner(new java.io.FileInputStream(args[0]),sf),sf).parse();
+	}
+
+:}
+
+/* Simbolos Terminales */
+
+terminal IF;
+terminal THEN;
+terminal ELSE;
+terminal END;
+terminal REPEAT;
+terminal UNTIL;
+terminal READ;
+terminal WRITE;
+terminal ID;
+terminal NUM;
+terminal ASSIGN;
+terminal EQ;
+terminal LT;
+terminal PLUS;
+terminal MINUS;
+terminal TIMES;
+terminal OVER;
+terminal LPAREN;
+terminal RPAREN;
+terminal SEMI;
+
+/* Simbolos No Terminales */
+non terminal program;
+non terminal stmt_seq;
+non terminal stmt;
+non terminal if_stmt;
+non terminal repeat_stmt;
+non terminal assign_stmt;
+non terminal read_stmt;
+non terminal write_stmt;
+non terminal exp;
+non terminal simple_exp;
+non terminal term;
+non terminal factor;
+
+/* Precedencia de operadores */
+precedence left PLUS, MINUS;
+precedence left TIMES;
+
+
+/* REGLAS GRAMATICALES */
+program     ::= stmt_seq	{: 	:}
+		;
+
+stmt_seq    ::= stmt_seq SEMI stmt	{: 	:}
+            | stmt	{:	:}
+		;
+
+stmt        ::= if_stmt	{:	:}
+            | repeat_stmt	{:	:}
+            | assign_stmt	{:	:}
+            | read_stmt	{:	:}
+            | write_stmt	{:	:}
+            | error	{: 	:}
+            ;
+
+if_stmt     ::= IF exp THEN stmt_seq END	{: :}
+		| IF exp THEN stmt_seq ELSE stmt_seq END	{: 	:}
+		;
+
+repeat_stmt ::= REPEAT stmt_seq UNTIL exp	{: 	:}
+		;
+
+assign_stmt ::= ID 	{: 	:}
+			ASSIGN exp	{: 	:}
+		;
+
+read_stmt   ::= READ ID	{: 	:}
+		;
+
+write_stmt  ::= WRITE exp	{: 	:}
+		;
+
+exp         ::= simple_exp LT simple_exp	{: 	:} 
+		| simple_exp EQ simple_exp	{: 	:}
+		| simple_exp	{: 	:}
+		;
+
+simple_exp  ::= simple_exp PLUS term	{: 	:}
+		| simple_exp MINUS term	{: 	:}
+		| term:ex	{: 	:}
+		;
+
+term        ::= term TIMES factor	{: 	:}
+		| term OVER factor	{: 	:}
+		| factor	{: 	:}
+		;
+
+factor      ::= LPAREN exp RPAREN	{: 	:}
+		| NUM	{: 	:}
+		| ID	{: 	:}
+		| error	{: 	:}
+		;
