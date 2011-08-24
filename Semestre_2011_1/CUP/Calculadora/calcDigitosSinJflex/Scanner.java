@@ -2,11 +2,11 @@ import java.io.*;
 import java_cup.runtime.*;
 
 
-class Scan implements java_cup.runtime.Scanner {
+class Scanner implements java_cup.runtime.Scanner {
 
 	private java.io.BufferedReader FileIn;
 	
-	Scan(java.io.InputStream instream){
+	Scanner(java.io.InputStream instream){
 		FileIn = new java.io.BufferedReader(
 			new java.io.InputStreamReader(instream)
 		);
