@@ -1,0 +1,53 @@
+import java_cup.runtime.*;
+import java.io.*;
+
+parser code {:
+
+
+	public static void main(String args[]) throws Exception {
+		parser analizador;
+		analizador = new parser(new Scanner(System.in));
+		analizador.parse();
+	}
+
+:}
+
+terminal Integer ENTERO;
+terminal SUMA, RESTA, DIVISION, MULTIPLICACION;
+terminal POTENCIA, RESULTADO, LPARENT, RPARENT, SIGNO;
+
+non terminal nodoBase expresion;
+non terminal sesion, ecuacion;
+
+precedence left RESTA, SUMA;
+precedence left MULTIPLICACION, DIVISION;
+precedence left SIGNO;
+precedence right POTENCIA;
+
+//GRAMATICA
+
+sesion ::= sesion ecuacion | ecuacion;
+
+ecuacion ::= 		expresion:AST {: System.out.println("AST construido");	
+					 Ejecutora.ejecutar(AST):
+					:} RESULTADO
+			|	error {: System.out.println("Aprenda a escribir br..");  :}RESULTADO
+			;
+expresion 	::= ENTERO:D1
+			{:	RESULT = new nodoEntero(D1.intValue()); :}
+          	| expresion:E1 SUMA expresion:E2
+			{:	RESULT = new nodoOperacion(E1,E2,tipoOperacion.suma); :}
+          	| expresion:E1 RESTA expresion:E2
+			{:	RESULT = new nodoOperacion(E1,E2,tipoOperacion.resta); :}
+          	| expresion:E1 MULTIPLICACION expresion:E2
+			{:	RESULT = new nodoOperacion(E1,E2,tipoOperacion.multi); :}
+          	| expresion:E1 DIVISION expresion:E2
+			{:	RESULT = new nodoOperacion(E1,E2,tipoOperacion.divi); :}
+		| expresion:E1 POTENCIA expresion:E2
+			{:	RESULT = new nodoOperacion(E1,E2,tipoOperacion.potencia);  :}
+		| RESTA expresion:E1
+			{: RESULT = new nodoOperacion(E1,tipoOperacion.neg); :}
+			%prec SIGNO
+		| LPARENT expresion:EX RPARENT
+			{: RESULT = EX; :}
+		;
