@@ -12,7 +12,7 @@ parser code {:
 
 :}
 
-terminal Integer ENTERO;
+terminal Integer DIGITO;
 terminal SUMA, RESTA, DIVISION, MULTIPLICACION;
 terminal POTENCIA, RESULTADO, LPARENT, RPARENT, SIGNO;
 
@@ -33,7 +33,7 @@ ecuacion ::= 		expresion:EQ {: System.out.println("Sintaxis OK");
 						:} RESULTADO
 			|	error {: System.out.println("Aprenda a escribir br..");  :}RESULTADO
 			;
-expresion 	::= ENTERO:D1
+expresion 	::= DIGITO:D1
 			{:	RESULT = new Integer(D1.intValue());	:}
           	| expresion:E1 SUMA expresion:E2
 			{:	RESULT = new Integer(E1.intValue() + E2.intValue()); :}
