@@ -1,0 +1,200 @@
+package Tiny;
+
+import java_cup.runtime.*;
+import ast.*;
+
+parser code {:
+
+/***********
+SymbolFactory es una nueva caracteristica que ha sido añadida a las version 11a de cup, la cual facilita la implementacion de clases Symbol personalizadas
+, esto debido a que dicha clase no provee mucha información de contexto que podria ser util para el analisis semantico o ayudar en la construccion del AST
+Mas informacion en: http//4thmouse.com/index.php/2007/02/15/using-custom-symbols-in-cup/
+***********/
+	public static void main(String args[]) throws Exception {
+		//TinySymbolFactory sf = new TinySymbolFactory();
+		SymbolFactory sf = new DefaultSymbolFactory();
+		if (args.length==0) 
+			new parser(new Scanner(System.in,sf),sf).parse();
+		else 
+			new parser(new Scanner(new java.io.FileInputStream(args[0]),sf),sf).parse();
+	}
+
+:}
+
+action code {:
+	private boolean debug=true;
+	private NodoBase ast=null;
+:}
+
+/* Simbolos Terminales */
+
+terminal IF;
+terminal THEN;
+terminal ELSE;
+terminal END;
+terminal REPEAT;
+terminal UNTIL;
+terminal READ;
+terminal WRITE;
+terminal String ID;
+terminal Integer NUM;
+terminal ASSIGN;
+terminal EQ;
+terminal LT;
+terminal PLUS;
+terminal MINUS;
+terminal TIMES;
+terminal OVER;
+terminal LPAREN;
+terminal RPAREN;
+terminal SEMI;
+
+/* Simbolos No Terminales */
+non terminal program;
+non terminal NodoBase stmt_seq;
+non terminal NodoBase stmt;
+non terminal NodoBase if_stmt;
+non terminal NodoBase repeat_stmt;
+non terminal NodoBase assign_stmt;
+non terminal NodoBase read_stmt;
+non terminal NodoBase write_stmt;
+non terminal NodoBase exp;
+non terminal NodoBase simple_exp;
+non terminal NodoBase term;
+non terminal NodoBase factor;
+
+/* Precedencia de operadores */
+precedence left PLUS, MINUS;
+precedence left TIMES, OVER;
+
+
+/* REGLAS GRAMATICALES */
+program     ::= stmt_seq:s	{: 
+			if(debug) System.out.println("\t regla 1"); 
+			ast=s;
+		:}
+		;
+
+stmt_seq    ::= stmt_seq:ini SEMI stmt:sent	
+						{: if(debug) System.out.println("\t regla 2a"); 
+							NodoBase nodoActual = ini;
+							if(nodoActual!=null){
+								while(nodoActual.tieneHermano()==true)
+								{
+									nodoActual=nodoActual.getHermanoDerecha();
+								}
+								nodoActual.setHermanoDerecha(sent);
+		 					 RESULT=ini;
+							}
+							else
+							{
+						     		RESULT=sent;
+							}
+						:}
+            | stmt:sent	{: if(debug) System.out.println("\t regla 2b"); 
+					RESULT=sent;
+				:}
+		;
+
+stmt        ::= if_stmt:sif	{: if(debug) System.out.println("\t regla 3a"); 
+						RESULT=sif; 	
+					:}
+            | repeat_stmt:srep	{: if(debug) System.out.println("\t regla 3b"); 
+						RESULT=srep;
+						:}
+            | assign_stmt:sasi	{: if(debug) System.out.println("\t regla 3c"); 
+				RESULT =sasi;
+						:}
+            | read_stmt:slec	{: if(debug) System.out.println("\t regla 3d"); 
+				RESULT =slec;
+					:}
+            | write_stmt:sesc	{: if(debug) System.out.println("\t regla 3e"); 
+				RESULT =sesc;
+					:}
+            | error	{: if(debug) System.out.println("\t regla 3f"); 
+				RESULT = null;
+				:}
+            ;
+
+if_stmt     ::= IF exp:ex THEN stmt_seq:pthen END	
+			{: if(debug) System.out.println("\t regla 4a"); 
+				RESULT = (NodoBase) new nodoIf(ex,pthen);
+			:}
+		| IF exp:ex THEN stmt_seq:pthen ELSE stmt_seq:pelse END	
+			{: if(debug) System.out.println("\t regla 4b"); 
+				RESULT = (NodoBase) new nodoIf(ex,pthen,pelse);
+			:}
+		;
+
+repeat_stmt ::= REPEAT stmt_seq:cuerpo UNTIL exp:prueba	
+							{: if(debug) System.out.println("\t regla 5"); 
+							   RESULT=(NodoBase) new nodoRepeat(prueba,cuerpo);
+							:}
+		;
+
+assign_stmt ::= ID:variable ASSIGN exp:ex	{: if(debug) System.out.println("\t regla 6 parte final");
+				RESULT = (NodoBase) new nodoAsignacion(variable,ex);
+					:}
+		;
+
+read_stmt   ::= READ ID:variable	{: if(debug) System.out.println("\t regla 7"); 
+						RESULT=(NodoBase) new nodoLectura(variable);
+					:}
+		;
+
+write_stmt  ::= WRITE exp:ex	{: if(debug) System.out.println("\t regla 8"); 
+						RESULT=(NodoBase) new nodoEscribir(ex);
+					:}
+		;
+
+exp         ::= simple_exp:exI LT simple_exp:exD	{: if(debug) System.out.println("\t regla 9a"); 
+									RESULT=(NodoBase) new nodoMenor(exI,exD);
+								:} 
+		| simple_exp:exI EQ simple_exp:exD	{: if(debug) System.out.println("\t regla 9b"); 
+							nodoIgualdad n = new nodoIgualdad(exI,exD);
+							RESULT=(NodoBase) n;
+							:}
+		| simple_exp:ex	{: if(debug) System.out.println("\t regla 9c"); 
+					RESULT=ex;
+					:}
+		;
+
+simple_exp  ::= simple_exp:exI PLUS term:exD	{: if(debug) System.out.println("\t regla 10a"); 
+							RESULT = new nodoSuma(exI,exD);
+							:}
+		| simple_exp:exI MINUS term:exD	{: if(debug) System.out.println("\t regla 10b"); 
+							RESULT = new nodoResta(exI,exD);
+							:}
+		| term:ex	{: if(debug) System.out.println("\t regla 10c"); 
+				RESULT=ex;
+				:}
+		;
+
+term        ::= term:exI TIMES factor:exD	{: if(debug) System.out.println("\t regla 11a"); 
+							nodoMulti n = new nodoMulti(exI,exD);
+							RESULT=(NodoBase) n;
+							:}
+		| term:exI OVER factor:exD	{: if(debug) System.out.println("\t regla 11b"); 
+							nodoDivi n = new nodoDivi(exI,exD);
+							RESULT=(NodoBase) n;
+						:}
+		| factor:ex	{: if(debug) System.out.println("\t regla 11c"); 
+					RESULT=ex;
+					:}
+		;
+
+factor      ::= LPAREN exp:ex RPAREN	{: if(debug) System.out.println("\t regla 12a"); 
+							 RESULT=ex;
+							:}
+		| NUM:valor	{: if(debug) System.out.println("\t regla 12b"); 
+					   nodoNumero n = new nodoNumero(valor);
+					   RESULT=(NodoBase) n;
+					:}
+		| ID:variable	{: if(debug) System.out.println("\t regla 12c"); 
+					  nodoIdentificador n = new nodoIdentificador(variable);
+					  RESULT=(NodoBase) n;
+					:}
+		| error	{: if(debug) System.out.println("\t regla 12d"); 
+					   RESULT=null;
+				:}
+		;

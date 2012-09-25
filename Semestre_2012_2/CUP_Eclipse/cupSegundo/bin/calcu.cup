@@ -1,0 +1,77 @@
+import java_cup.runtime.*;
+import java.io.*;
+
+parser code {:
+	public static void main(String arg[]) throws Exception
+	{
+		parser analizadorSintactico;
+		analizadorSintactico = new parser(new Yylex(System.in));
+		analizadorSintactico.parse();
+	}
+:};
+
+//terminales y no terminales
+
+terminal Integer NUMERO;
+terminal SUMA, RESTA, DIVI, MULTI, POTENCIA;
+terminal PARENTDER, PARENTIZQ, IGUAL, SIGNO;
+non terminal sesion, ecuacion;
+non terminal String opbinaria;
+non terminal Integer expresion;
+
+//precedencia
+precedence left SUMA, RESTA;
+precedence left MULTI, DIVI;
+precedence left SIGNO;
+precedence right POTENCIA;
+
+//GRAMATICA
+
+sesion ::= ecuacion | ecuacion sesion;
+
+ecuacion ::=   expresion:valor IGUAL {: System.out.println(valor.intValue() + " OK"); :} 
+			 | error IGUAL {: System.out.println("Error"); :}
+			 ;
+
+expresion ::= 		NUMERO:n 
+					{: RESULT = n.intValue(); :}  
+				|	expresion:eIzq opbinaria:op expresion:eDer
+					{: 
+						
+						if(op.contentEquals("+"))
+						 	RESULT = eIzq.intValue() + eDer.intValue();
+						if(op.contentEquals("-"))
+						 	RESULT = eIzq.intValue() - eDer.intValue();
+						if(op.contentEquals("*"))
+							RESULT = eIzq.intValue() * eDer.intValue();
+						if(op.contentEquals("/"))
+							RESULT = eIzq.intValue() / eDer.intValue();
+						if(op.contentEquals("^"))
+							RESULT =  (int)  Math.pow(eIzq.intValue(),eDer.intValue());
+					:} 
+				|
+			  	RESTA expresion:e  
+			  		{: RESULT = e.intValue() * - 1 ; :}
+			  	%prec SIGNO
+			  	|
+			  	PARENTIZQ expresion:e PARENTDER
+			  		{: RESULT=e.intValue(); :}
+			  	;
+			  	
+opbinaria ::=		SUMA 	{: RESULT="+"; :}
+				| 	RESTA  	{: RESULT="-"; :}
+				| 	DIVI  	{: RESULT="/"; :}
+				| 	MULTI  	{: RESULT="*"; :}
+				| 	POTENCIA 	{: RESULT="^"; :}
+				;
+			  	
+
+
+
+
+
+
+
+
+
+

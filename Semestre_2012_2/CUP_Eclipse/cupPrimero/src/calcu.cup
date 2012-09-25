@@ -1,0 +1,49 @@
+import java_cup.runtime.*;
+import java.io.*;
+
+parser code {:
+	public static void main(String arg[]) throws Exception
+	{
+		parser analizadorSintactico;
+		analizadorSintactico = new parser(new scanner(System.in));
+		analizadorSintactico.parse();
+	}
+:};
+
+//terminales y no terminales
+
+terminal DIGITO, SUMA, RESTA, DIVI, MULTI, POTENCIA;
+terminal PARENTDER, PARENTIZQ, IGUAL, SIGNO;
+non terminal sesion, ecuacion, expresion, opbinaria;
+
+//precedencia
+precedence left SUMA, RESTA;
+precedence left MULTI, DIVI;
+precedence left SIGNO;
+precedence right POTENCIA;
+
+//GRAMATICA
+
+sesion ::= ecuacion | ecuacion sesion;
+
+ecuacion ::=   expresion IGUAL {: System.out.println("Ecuacion Correcta"); :} 
+			 | error IGUAL {: System.out.println("Error en ecuacion"); :}
+			 ;
+
+expresion ::= 	DIGITO |
+				expresion opbinaria expresion |
+			  	RESTA expresion %prec SIGNO |
+			  	PARENTIZQ expresion PARENTDER;
+			  	
+opbinaria ::=	SUMA | RESTA | DIVI | MULTI | POTENCIA;
+			  	
+
+
+
+
+
+
+
+
+
+

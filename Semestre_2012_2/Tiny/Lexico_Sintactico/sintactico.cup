@@ -1,0 +1,154 @@
+package Tiny;
+
+import java_cup.runtime.*;
+import ast.*;
+
+parser code {:
+
+/***********
+SymbolFactory es una nueva caracteristica que ha sido añadida a las version 11a de cup, la cual facilita la implementacion de clases Symbol personalizadas
+, esto debido a que dicha clase no provee mucha información de contexto que podria ser util para el analisis semantico o ayudar en la construccion del AST
+Mas informacion en: http//4thmouse.com/index.php/2007/02/15/using-custom-symbols-in-cup/
+***********/
+	public static void main(String args[]) throws Exception {
+		//TinySymbolFactory sf = new TinySymbolFactory();
+		SymbolFactory sf = new DefaultSymbolFactory();
+		if (args.length==0) 
+			new parser(new Scanner(System.in,sf),sf).parse();
+		else 
+			new parser(new Scanner(new java.io.FileInputStream(args[0]),sf),sf).parse();
+	}
+
+:}
+
+action code {:
+	private boolean debug=true;
+	private NodoBase ast=null;
+:}
+
+/* Simbolos Terminales */
+
+terminal IF;
+terminal THEN;
+terminal ELSE;
+terminal END;
+terminal REPEAT;
+terminal UNTIL;
+terminal READ;
+terminal WRITE;
+terminal String ID;
+terminal Integer NUM;
+terminal ASSIGN;
+terminal EQ;
+terminal LT;
+terminal PLUS;
+terminal MINUS;
+terminal TIMES;
+terminal OVER;
+terminal LPAREN;
+terminal RPAREN;
+terminal SEMI;
+
+/* Simbolos No Terminales */
+non terminal program;
+non terminal NodoBase stmt_seq;
+non terminal NodoBase stmt;
+non terminal NodoBase if_stmt;
+non terminal NodoBase repeat_stmt;
+non terminal NodoBase assign_stmt;
+non terminal NodoBase read_stmt;
+non terminal NodoBase write_stmt;
+non terminal NodoBase exp;
+non terminal NodoBase simple_exp;
+non terminal NodoBase term;
+non terminal NodoBase factor;
+
+/* Precedencia de operadores */
+precedence left PLUS, MINUS;
+precedence left TIMES, OVER;
+
+
+/* REGLAS GRAMATICALES */
+program     ::= stmt_seq:s	{: 
+			if(debug) System.out.println("\t regla 1"); 
+					
+		:}
+		;
+
+stmt_seq    ::= stmt_seq:ini SEMI stmt:sent	{: if(debug) System.out.println("\t regla 2a"); 
+						:}
+            | stmt:sent	{: if(debug) System.out.println("\t regla 2b"); 
+				:}
+		;
+
+stmt        ::= if_stmt:sif	{: if(debug) System.out.println("\t regla 3a"); 
+					:}
+            | repeat_stmt:srep	{: if(debug) System.out.println("\t regla 3b"); 
+						:}
+            | assign_stmt:sasi	{: if(debug) System.out.println("\t regla 3c"); 
+						:}
+            | read_stmt:slec	{: if(debug) System.out.println("\t regla 3d"); 
+					:}
+            | write_stmt:sesc	{: if(debug) System.out.println("\t regla 3e"); 
+					:}
+            | error	{: if(debug) System.out.println("\t regla 3f"); 
+				:}
+            ;
+
+if_stmt     ::= IF exp:ex THEN stmt_seq:pthen END	{: if(debug) System.out.println("\t regla 4a"); 
+		:}
+		| IF exp:ex THEN stmt_seq:pthen ELSE stmt_seq:pelse END	{: if(debug) System.out.println("\t regla 4b"); 
+		:}
+		;
+
+repeat_stmt ::= REPEAT stmt_seq:cuerpo UNTIL exp:prueba	{: if(debug) System.out.println("\t regla 5"); 
+							:}
+		;
+
+assign_stmt ::= ID:variable 	{: if(debug) System.out.println("\t regla 6 parte del medio"); 
+				:}
+			ASSIGN exp:ex	{: if(debug) System.out.println("\t regla 6 parte final");
+					:}
+		;
+
+read_stmt   ::= READ ID:variable	{: if(debug) System.out.println("\t regla 7"); 
+					:}
+		;
+
+write_stmt  ::= WRITE exp:ex	{: if(debug) System.out.println("\t regla 8"); 
+					:}
+		;
+
+exp         ::= simple_exp:exI LT simple_exp:exD	{: if(debug) System.out.println("\t regla 9a"); 
+								:} 
+		| simple_exp:exI EQ simple_exp:exD	{: if(debug) System.out.println("\t regla 9b"); 
+							:}
+		| simple_exp:ex	{: if(debug) System.out.println("\t regla 9c"); 
+					:}
+		;
+
+simple_exp  ::= simple_exp:exI PLUS term:exD	{: if(debug) System.out.println("\t regla 10a"); 
+							:}
+		| simple_exp:exI MINUS term:exD	{: if(debug) System.out.println("\t regla 10b"); 
+							:}
+		| term:ex	{: if(debug) System.out.println("\t regla 10c"); 
+				:}
+		;
+
+term        ::= term:exI TIMES factor:exD	{: if(debug) System.out.println("\t regla 11a"); 
+							:}
+		| term:exI OVER factor:exD	{: if(debug) System.out.println("\t regla 11b"); 
+						:}
+		| factor:ex	{: if(debug) System.out.println("\t regla 11c"); 
+					:}
+		;
+
+factor      ::= LPAREN exp:ex RPAREN	{: if(debug) System.out.println("\t regla 12a"); 
+							:}
+		| NUM:valor	{: if(debug) System.out.println("\t regla 12b"); 
+					:}
+		| ID:variable	{: if(debug) System.out.println("\t regla 12c"); 
+					:}
+		| error	{: if(debug) System.out.println("\t regla 12d"); 
+				:}
+		;

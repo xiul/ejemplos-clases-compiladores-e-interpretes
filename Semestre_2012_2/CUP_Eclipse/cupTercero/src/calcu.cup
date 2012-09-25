@@ -1,0 +1,150 @@
+import java_cup.runtime.*;
+import java.io.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+
+
+parser code {:
+	static FileInputStream FInStr = null;
+	static String fInName ; //nombre archivo entrada
+	public static HashMap hm;
+	public static List <String>tmpList;
+	
+	public static void main(String argv[]) throws Exception
+	{
+		tmpList = new ArrayList<String>();
+		hm = new HashMap<String,ValorIdentificador>();
+		
+		//Obtención de parámetros pasados en línea de comandos
+		if ( argv.length != 1) 
+		{ 	//error: nr. Parámetros incorrecto
+			System.out.println ("Número parámetros incorrecto!. Uso: ");
+			System.out.println ( "\tjava contador archivo.EXT");
+			return; 
+		}
+		else 
+		{ 	
+			parser analizadorSintactico;
+			fInName = argv[0];
+			analizadorSintactico = new parser(new Yylex(new FileInputStream(fInName)));
+			analizadorSintactico.parse();
+		}
+		
+		for
+	}
+:};
+
+//terminales y no terminales
+
+terminal Integer NUMEROENTERO;
+terminal Float NUMEROREAL;
+terminal String ID;
+terminal SUMA, RESTA, DIVI, MULTI, POTENCIA;
+terminal PARENTDER, PARENTIZQ, IGUAL, SIGNO;
+terminal PROGRAMA, FINVAR, VAR, FIN, COMA, DOSPUNTOS,PUNTOYCOMA, TIPOREAL, TIPOENTERO;
+
+non terminal sesion, ecuacion;
+non terminal codigo, declaraciones, declaracion, lista;
+non terminal String tipo;
+non terminal String opbinaria;
+non terminal String expresion;
+
+
+//precedencia
+precedence left SUMA, RESTA;
+precedence left MULTI, DIVI;
+precedence left SIGNO;
+precedence right POTENCIA;
+
+//GRAMATICA
+codigo ::= PROGRAMA VAR declaraciones FINVAR sesion FIN;
+declaraciones ::= declaracion | declaracion declaraciones;
+declaracion ::= ID:id lista
+				{: 
+					parser.hm.put(id,new ValorIdentificador(id));
+					parser.tmpList.add(id); 
+				:}
+				;
+lista ::=
+			 	COMA ID:id lista
+			 	{:
+			 		parser.hm.put(id,new ValorIdentificador(id));
+			 		parser.tmpList.add(id);	
+			 	:} 
+		 	| 	DOSPUNTOS tipo:t PUNTOYCOMA
+				{:
+					for(String s : parser.tmpList)
+					{
+						ValorIdentificador tmp = (ValorIdentificador) parser.hm.get(s);
+						tmp.tipo = t;
+						System.
+					}
+					parser.tmpList.clear();	
+				:}
+			;
+				
+tipo ::=	TIPOREAL
+ 				{: RESULT="float"; :}
+		| 	TIPOENTERO
+				{: RESULT="int"; :}
+		;
+
+sesion ::= ecuacion | ecuacion sesion;
+
+ecuacion ::=   ID IGUAL expresion:v PUNTOYCOMA{: System.out.println(v + " OK"); :} 
+			 ;
+
+expresion ::= 		NUMEROENTERO:n 
+					{: RESULT = "0"; :}
+				|	NUMEROREAL:n 
+					{: RESULT = "0"; :}
+				|	ID:identificador
+					{: RESULT = "0";
+							// tabla simbolos valor id identificador
+					:}  
+				|	expresion:eIzq opbinaria:op expresion:eDer
+					{: RESULT="0";
+						/*
+						if(op.contentEquals("+"))
+						 	RESULT = eIzq.intValue() + eDer.intValue();
+						if(op.contentEquals("-"))
+						 	RESULT = eIzq.intValue() - eDer.intValue();
+						if(op.contentEquals("*"))
+							RESULT = eIzq.intValue() * eDer.intValue();
+						if(op.contentEquals("/"))
+							RESULT = eIzq.intValue() / eDer.intValue();
+						if(op.contentEquals("^"))
+							RESULT =  (int)  Math.pow(eIzq.intValue(),eDer.intValue());
+							*/
+					:} 
+				|
+			  	RESTA expresion:e  
+			  		{: RESULT = "0"; 
+			  		//e.intValue() * - 1 ; 
+			  		:}
+			  	%prec SIGNO
+			  	|
+			  	PARENTIZQ expresion:e PARENTDER
+			  		{: RESULT="0";
+			  			//e.intValue(); 
+			  		:}
+			  	;
+			  	
+opbinaria ::=		SUMA 	{: RESULT="+"; :}
+				| 	RESTA  	{: RESULT="-"; :}
+				| 	DIVI  	{: RESULT="/"; :}
+				| 	MULTI  	{: RESULT="*"; :}
+				| 	POTENCIA 	{: RESULT="^"; :}
+				;
+			  	
+
+
+
+
+
+
+
+
+
+

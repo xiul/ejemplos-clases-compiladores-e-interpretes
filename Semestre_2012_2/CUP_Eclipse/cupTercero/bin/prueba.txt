@@ -1,0 +1,10 @@
+PROGRAMA
+  VAR
+	A,B : entero;
+	C : real;
+  FINVAR
+
+  A:=1;
+  B:=2;
+  C:=A/B;
+FIN 

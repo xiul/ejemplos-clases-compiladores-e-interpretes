@@ -1,0 +1,52 @@
+import java_cup.runtime.*;
+import java.io.*;
+
+parser code {:
+
+
+	public static void main(String args[]) throws Exception {
+		parser analizador;
+		analizador = new parser(new Scanner(System.in));
+		analizador.parse();
+	}
+
+:}
+
+terminal Integer ENTERO;
+terminal SUMA, RESTA, DIVISION, MULTIPLICACION;
+terminal POTENCIA, RESULTADO, LPARENT, RPARENT, SIGNO;
+
+non terminal nodoBase expresion;
+non terminal sesion, ecuacion;
+
+precedence left RESTA, SUMA;
+precedence left MULTIPLICACION, DIVISION;
+precedence left SIGNO;
+precedence right POTENCIA;
+
+//GRAMATICA
+sesion ::= sesion ecuacion | ecuacion;
+
+ecuacion ::= 		expresion:EQ {: System.out.println("Sintaxis OK"); 
+							  System.out.println("AST Generado"); 
+						:} RESULTADO
+			|	error {: System.out.println("Aprenda a escribir br..");  :}RESULTADO
+			;
+expresion 	::= ENTERO:D1
+			{:	RESULT = new NodoNumero(D1.intValue());	 :}
+          	| expresion:E1 SUMA expresion:E2
+			{: RESULT = new nodoOpBinaria(E1,E2,tipoOperador.suma); :}
+          	| expresion:EE1 RESTA expresion:EE2
+			{: RESULT = new nodoOpBinaria(EE1,EE2,tipoOperador.resta); :}
+          	| expresion:EA1 MULTIPLICACION expresion:EA2
+			{: RESULT = new nodoOpBinaria(EA1,EA2,tipoOperador.multi); :}
+          	| expresion:EC1 DIVISION expresion:EC2
+			{: RESULT = new nodoOpBinaria(EC1,EC2,tipoOperador.divi); :}
+		| expresion:ED1 POTENCIA expresion:ED2
+			{: RESULT = new nodoOpBinaria(ED1,ED2,tipoOperador.potencia);  :}
+		| RESTA expresion:EPX1
+			{:  RESULT = new nodoOpUnaria(EPX1); :}
+			%prec SIGNO
+		| LPARENT expresion:EXW RPARENT
+			{: RESULT = EXW; :}
+		;
